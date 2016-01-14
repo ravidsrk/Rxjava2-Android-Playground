@@ -1,7 +1,5 @@
 package com.ravidsrk.rxandroidstarter;
 
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -23,7 +21,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import rx.Observable;
@@ -54,16 +51,69 @@ public class MainActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.image);
 
         // TODO Create a basic Observable - Our Observable emits "Hello, world!" then completes.
+        Observable<String> myObservable = Observable.create(
+                new Observable.OnSubscribe<String>() {
+                    @Override
+                    public void call(Subscriber<? super String> sub) {
+                        sub.onNext("Hello, world!");
+                        sub.onCompleted();
+                    }
+                }
+        );
+
+        mButton.setOnClickListener(v -> Log.d(TAG,"Clicked"));
 
         // TODO Create a Subscriber to consume the data
+        Subscriber<String> mySubscriber = new Subscriber<String>() {
+            @Override
+            public void onNext(String s) { Log.d(TAG, s); }
+
+            @Override
+            public void onCompleted() { }
+
+            @Override
+            public void onError(Throwable e) { }
+        };
 
         // TODO Hook Observable and Subscriber each other using subscribe():
+        myObservable.subscribe(mySubscriber);
 
         // TODO Create another Observable using .just for shorter version
+        Observable<String> myAnotherObservable = Observable.just("Hello, world! Again");
 
         // TODO Create action to consume the .just Observable
 
+        // TODO Create action to consume the .just Observable
+        Action1<String> onNextAction = new Action1<String>() {
+            @Override
+            public void call(String s) {
+                Log.d(TAG, s);
+            }
+        };
+
+        myAnotherObservable.subscribe(onNextAction);
+
         // TODO Hook Observable and Action each other using subscribe():
+        Observable.just("Hello, world! Shorter")
+                .map(new Func1<String, String >() {
+                    @Override
+                    public String call(String s) {
+                        return s + " Droidcon";
+                    }
+                })
+                .map(new Func1<String, Integer>() {
+                    @Override
+                    public Integer call(String s) {
+                        return s.hashCode();
+                    }
+                })
+                .subscribe(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer s) {
+                        Log.d(TAG, s+"");
+                    }
+                });
+
 
         // TODO Modify the consumed data
 
@@ -71,13 +121,65 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO More operator
 
-        // TODO Iterate an array list
+        // TODO Observable.from operator
+        getUrls("Droidcon.in")
+                .flatMap(new Func1<List<String>, Observable<String>>() {
+                    @Override
+                    public Observable<String> call(List<String> urls) {
+                        return Observable.from(urls);
+                    }
+                })
+                .flatMap(new Func1<String, Observable<String>>() {
+                    @Override
+                    public Observable<String> call(String url) {
+                        return getTitle(url);
+                    }
+                })
+                .filter(new Func1<String, Boolean>() {
+                    @Override
+                    public Boolean call(String s) {
+                        return !s.contains("com");
+                    }
+                })
+                .take(2)
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String url) {
+                        Log.d(TAG, url);
+                    }
+                });
+
 
         // TODO Observable.from operator
 
         // TODO Observable.flatMap operator
 
         // TODO Instead of the verbose setOnClickListener
+        RxView.clicks(mButton).subscribe(new Action1<Void>() {
+            @Override
+            public void call(Void aVoid) {
+
+                getBitmapObservable()
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Subscriber<Bitmap>() {
+                            @Override
+                            public void onCompleted() {
+
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+
+                            }
+
+                            @Override
+                            public void onNext(Bitmap bitmap) {
+                                mImageView.setImageBitmap(bitmap);
+                            }
+                        });
+            }
+        });
 
         // TODO Log mButton clicked
 
@@ -86,6 +188,20 @@ public class MainActivity extends AppCompatActivity {
         // TODO Download the image from URL using RXJava
 
         // TODO Observe text changes on an EditText (RxBinding)
+        // TODO Observe text changes on an EditText (RxBinding)
+        // TODO Filter text changes on an EditText (RxBinding)
+        RxTextView.textChangeEvents(mEditText)
+                .filter(new Func1<TextViewTextChangeEvent, Boolean>() {
+                    @Override
+                    public Boolean call(TextViewTextChangeEvent event) {
+                        return event.text().length() >= 3;
+                    }
+                }).subscribe(new Action1<TextViewTextChangeEvent>() {
+            @Override
+            public void call(TextViewTextChangeEvent event) {
+                Log.d(TAG, event.text().toString());
+            }
+        });
 
         // TODO Filter text changes on an EditText (RxBinding)
     }
@@ -105,23 +221,6 @@ public class MainActivity extends AppCompatActivity {
 
     Observable<String> getTitle(String URL) {
         return Observable.just(URL.substring(13));
-    }
-
-    private List<String> getInstalledApps() {
-        List<String> installedapplist = new ArrayList<>();
-        PackageManager packageManager=this.getPackageManager();
-        List<ApplicationInfo> appsList = packageManager.getInstalledApplications(0);
-
-        Iterator<ApplicationInfo> it=appsList.iterator();
-        while(it.hasNext()){
-            ApplicationInfo pk=(ApplicationInfo)it.next();
-
-            String appname = packageManager.getApplicationLabel(pk).toString();
-            Log.d(TAG,appname);
-            installedapplist.add(appname);
-        }
-
-        return installedapplist;
     }
 
 
