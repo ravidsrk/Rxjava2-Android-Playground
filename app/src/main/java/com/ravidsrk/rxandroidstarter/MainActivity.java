@@ -1,5 +1,7 @@
 package com.ravidsrk.rxandroidstarter;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -21,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import rx.Observable;
@@ -61,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
-        mButton.setOnClickListener(v -> Log.d(TAG,"Clicked"));
 
         // TODO Create a Subscriber to consume the data
         Subscriber<String> mySubscriber = new Subscriber<String>() {
@@ -75,13 +77,14 @@ public class MainActivity extends AppCompatActivity {
             public void onError(Throwable e) { }
         };
 
+
         // TODO Hook Observable and Subscriber each other using subscribe():
         myObservable.subscribe(mySubscriber);
+
 
         // TODO Create another Observable using .just for shorter version
         Observable<String> myAnotherObservable = Observable.just("Hello, world! Again");
 
-        // TODO Create action to consume the .just Observable
 
         // TODO Create action to consume the .just Observable
         Action1<String> onNextAction = new Action1<String>() {
@@ -91,37 +94,89 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        myAnotherObservable.subscribe(onNextAction);
 
         // TODO Hook Observable and Action each other using subscribe():
+        myAnotherObservable.subscribe(onNextAction);
+
+
+        // TODO Modify the consumed data
         Observable.just("Hello, world! Shorter")
-                .map(new Func1<String, String >() {
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        Log.d(TAG, s + " Droidcon");
+                    }
+                });
+
+
+        // TODO Modify the consumed data through operator
+        Observable.just("Hello, world!")
+                .map(new Func1<String, String>() {
                     @Override
                     public String call(String s) {
                         return s + " Droidcon";
                     }
                 })
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        Log.d(TAG, s);
+                    }
+                });
+
+
+        // TODO More operator
+        Observable.just("Hello, world!")
                 .map(new Func1<String, Integer>() {
                     @Override
                     public Integer call(String s) {
                         return s.hashCode();
                     }
                 })
-                .subscribe(new Action1<Integer>() {
+                .map(new Func1<Integer, String>() {
                     @Override
-                    public void call(Integer s) {
-                        Log.d(TAG, s+"");
+                    public String call(Integer integer) {
+                        return Integer.toString(integer);
+                    }
+                })
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String str) {
+                        Log.d(TAG, str);
                     }
                 });
 
 
-        // TODO Modify the consumed data
+        // TODO Iterate an array list
+        getUrls("Droidcon")
+                .subscribe(new Action1<List<String>>() {
+                    @Override
+                    public void call(List<String> urls) {
 
-        // TODO Modify the consumed data through operator
+                        for (String url : urls) {
+                            System.out.println(url);
+                        }
 
-        // TODO More operator
+                    }
+                });
+
 
         // TODO Observable.from operator
+        getUrls("Droidcon")
+                .subscribe(new Action1<List<String>>() {
+                    @Override
+                    public void call(List<String> urls) {
+                        Observable.from(urls).subscribe(new Action1<String>() {
+                            @Override
+                            public void call(String url) {
+                                Log.d(TAG, url);
+                            }
+                        });
+                    }
+                });
+
+
+        // TODO Observable.flatMap operator
         getUrls("Droidcon.in")
                 .flatMap(new Func1<List<String>, Observable<String>>() {
                     @Override
@@ -138,10 +193,16 @@ public class MainActivity extends AppCompatActivity {
                 .filter(new Func1<String, Boolean>() {
                     @Override
                     public Boolean call(String s) {
-                        return !s.contains("com");
+                        return !s.contains(".com");
                     }
                 })
-                .take(2)
+                .take(3)
+                .doOnNext(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        Log.d(TAG, "Before Subscribe Called " + s);
+                    }
+                })
                 .subscribe(new Action1<String>() {
                     @Override
                     public void call(String url) {
@@ -149,16 +210,23 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
-        // TODO Observable.from operator
-
-        // TODO Observable.flatMap operator
-
         // TODO Instead of the verbose setOnClickListener
+        // TODO Log mButton clicked
+        // TODO Download the image from URL using AsyncTask
+        // TODO Download the image from URL using RXJava
         RxView.clicks(mButton).subscribe(new Action1<Void>() {
             @Override
             public void call(Void aVoid) {
 
+
+                Log.d(TAG, "Button Clicked");
+
+
+//                LoadImageFromURL task = new LoadImageFromURL();
+//                // Execute the task
+//                task.execute();
+
+                // TODO Download the image from URL using RXJava
                 getBitmapObservable()
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
@@ -174,21 +242,22 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onNext(Bitmap bitmap) {
-                                mImageView.setImageBitmap(bitmap);
+                            public void onNext(Bitmap result) {
+                                mImageView.setImageBitmap(result);
                             }
                         });
+
             }
         });
 
-        // TODO Log mButton clicked
-
-        // TODO Download the image from URL using AsyncTask
-
-        // TODO Download the image from URL using RXJava
-
         // TODO Observe text changes on an EditText (RxBinding)
-        // TODO Observe text changes on an EditText (RxBinding)
+        RxTextView.textChangeEvents(mEditText).subscribe(new Action1<TextViewTextChangeEvent>() {
+            @Override
+            public void call(TextViewTextChangeEvent event) {
+                Log.d(TAG, event.text().toString());
+            }
+        });
+
         // TODO Filter text changes on an EditText (RxBinding)
         RxTextView.textChangeEvents(mEditText)
                 .filter(new Func1<TextViewTextChangeEvent, Boolean>() {
@@ -202,8 +271,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, event.text().toString());
             }
         });
-
-        // TODO Filter text changes on an EditText (RxBinding)
     }
 
     Observable<List<String>> getUrls(String text) {
@@ -221,6 +288,23 @@ public class MainActivity extends AppCompatActivity {
 
     Observable<String> getTitle(String URL) {
         return Observable.just(URL.substring(13));
+    }
+
+    private List<String> getInstalledApps() {
+        List<String> installedapplist = new ArrayList<>();
+        PackageManager packageManager=this.getPackageManager();
+        List<ApplicationInfo> appsList = packageManager.getInstalledApplications(0);
+
+        Iterator<ApplicationInfo> it=appsList.iterator();
+        while(it.hasNext()){
+            ApplicationInfo pk=(ApplicationInfo)it.next();
+
+            String appname = packageManager.getApplicationLabel(pk).toString();
+            Log.d(TAG,appname);
+            installedapplist.add(appname);
+        }
+
+        return installedapplist;
     }
 
 
