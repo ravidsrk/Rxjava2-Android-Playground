@@ -1,7 +1,5 @@
-package com.ravidsrk.rxandroidstarter;
+package com.ravidsrk.rxjavaplayground;
 
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -23,7 +21,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import rx.Observable;
@@ -41,8 +38,6 @@ public class MainActivity extends AppCompatActivity {
     private EditText mEditText;
     private Button mButton;
     private ImageView mImageView;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
-
 
         // TODO Create a Subscriber to consume the data
         Subscriber<String> mySubscriber = new Subscriber<String>() {
@@ -290,27 +284,10 @@ public class MainActivity extends AppCompatActivity {
         return Observable.just(URL.substring(13));
     }
 
-    private List<String> getInstalledApps() {
-        List<String> installedapplist = new ArrayList<>();
-        PackageManager packageManager=this.getPackageManager();
-        List<ApplicationInfo> appsList = packageManager.getInstalledApplications(0);
-
-        Iterator<ApplicationInfo> it=appsList.iterator();
-        while(it.hasNext()){
-            ApplicationInfo pk=(ApplicationInfo)it.next();
-
-            String appname = packageManager.getApplicationLabel(pk).toString();
-            Log.d(TAG,appname);
-            installedapplist.add(appname);
-        }
-
-        return installedapplist;
-    }
-
 
     @Nullable
     private Bitmap getBitmap() {
-        Bitmap map = null;
+        Bitmap map;
 
         map = downloadImage(URL);
 
@@ -319,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Bitmap downloadImage(String url) {
         Bitmap bitmap = null;
-        InputStream stream = null;
+        InputStream stream;
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
         bmOptions.inSampleSize = 1;
 

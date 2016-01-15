@@ -7,7 +7,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.ravidsrk.rxandroidstarter.MainActivity">
+    tools:context="com.ravidsrk.rxjavaplayground.MainActivity">
 
     <TextView
         android:id="@+id/txt_hello_world"
